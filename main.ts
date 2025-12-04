@@ -4,9 +4,12 @@ import { insertSourceView } from "./src/commands/insertSourceView";
 import { normalizeOrderValues } from "./src/commands/normalizeOrderValues";
 import { orderBySourceDate } from "./src/commands/orderBySourceDate";
 import { orderByTitle } from "./src/commands/orderByTitle";
-import type { CommandOutcome } from "./src/types";
+import { orderByCustomCriteria } from "./src/commands/orderByCustomCriteria";
+import type { CommandOutcome, OrderCriterion } from "./src/types";
 import { folderHasExistingOrders } from "./src/utils/order";
 import { confirmAction } from "./src/ui/confirmModal";
+import { collectFrontmatterKeys } from "./src/utils/frontmatterKeys";
+import { OrderCriteriaModal } from "./src/ui/orderCriteriaModal";
 
 export default class ObsidianInserterPlugin extends Plugin {
 	async onload() {
@@ -57,6 +60,32 @@ export default class ObsidianInserterPlugin extends Plugin {
 					{ warnIfOrderExists: true }
 				),
 		});
+
+		this.addCommand({
+			id: "order-files-by-custom-criteria",
+			name: "현재 폴더 정렬: 사용자 지정 기준",
+			callback: async () => {
+				const folder = this.getActiveFolder();
+				if (!folder) {
+					new Notice("명령을 실행하기 전에 처리할 노트를 하나 연 뒤 다시 시도하세요.");
+					return;
+				}
+
+				const frontmatterKeys = collectFrontmatterKeys(this.app);
+				const criteria = await this.promptForCriteria(frontmatterKeys);
+
+				if (!criteria?.length) {
+					new Notice("정렬 기준 선택이 취소되었습니다.");
+					return;
+				}
+
+				await this.runWithFolder(
+					folder,
+					(targetFolder) => orderByCustomCriteria(this.app, targetFolder, criteria),
+					{ warnIfOrderExists: true }
+				);
+			},
+		});
 	}
 
 	private async runWithActiveFolder(
@@ -72,6 +101,14 @@ export default class ObsidianInserterPlugin extends Plugin {
 			return;
 		}
 
+		await this.runWithFolder(folder, handler, options);
+	}
+
+	private async runWithFolder(
+		folder: TFolder,
+		handler: (folder: TFolder) => Promise<CommandOutcome>,
+		options?: { warnIfOrderExists?: boolean }
+	): Promise<void> {
 		if (options?.warnIfOrderExists) {
 			const hasOrder = await folderHasExistingOrders(this.app, folder);
 			if (hasOrder) {
@@ -106,5 +143,10 @@ export default class ObsidianInserterPlugin extends Plugin {
 	private getActiveFolder(): TFolder | null {
 		const activeFile = this.app.workspace.getActiveFile();
 		return activeFile?.parent ?? null;
+	}
+
+	private async promptForCriteria(frontmatterKeys: string[]): Promise<OrderCriterion[] | null> {
+		const modal = new OrderCriteriaModal(this.app, frontmatterKeys);
+		return modal.openAndGetCriteria();
 	}
 }

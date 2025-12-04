@@ -2,6 +2,7 @@ import type { App, TFile, TFolder } from "obsidian";
 import type { CommandOutcome } from "../types";
 import { getMarkdownFiles } from "../utils/files";
 import { getFrontmatter, replaceFrontmatter, type FrontmatterMatch } from "../utils/frontmatter";
+import { naturalCompare } from "../utils/naturalSort";
 
 const TITLE_REGEX = /^title:\s*(.*?)$/m;
 const ORDER_REGEX = /^order:\s*\d+$/m;
@@ -11,7 +12,6 @@ interface SortableEntry {
 	content: string;
 	frontmatter: FrontmatterMatch;
 	title: string;
-	titleKey: string;
 }
 
 export async function orderByTitle(app: App, folder: TFolder): Promise<CommandOutcome> {
@@ -32,9 +32,8 @@ export async function orderByTitle(app: App, folder: TFolder): Promise<CommandOu
 			const titleMatch = frontmatter.body.match(TITLE_REGEX);
 			const rawTitle = titleMatch?.[1]?.trim() ?? file.basename;
 			const title = rawTitle.replace(/^['"]|['"]$/g, "") || file.basename;
-			const titleKey = title.toLocaleLowerCase();
 
-			sortable.push({ file, content, frontmatter, title, titleKey });
+			sortable.push({ file, content, frontmatter, title });
 		} catch (error) {
 			console.error(error);
 			warnings.push(`${file.path}: 오류 - ${(error as Error).message}`);
@@ -42,11 +41,11 @@ export async function orderByTitle(app: App, folder: TFolder): Promise<CommandOu
 	}
 
 	sortable.sort((a, b) => {
-		const titleDiff = a.titleKey.localeCompare(b.titleKey);
+		const titleDiff = naturalCompare(a.title, b.title);
 		if (titleDiff !== 0) {
 			return titleDiff;
 		}
-		return a.file.path.localeCompare(b.file.path);
+		return naturalCompare(a.file.path, b.file.path);
 	});
 
 	let updated = 0;

@@ -2,6 +2,7 @@ import type { App, TFile, TFolder } from "obsidian";
 import type { CommandOutcome } from "../types";
 import { getMarkdownFiles } from "../utils/files";
 import { getFrontmatter, replaceFrontmatter, type FrontmatterMatch } from "../utils/frontmatter";
+import { naturalCompare } from "../utils/naturalSort";
 
 const ORDER_CAPTURE_REGEX = /^order:\s*.+$/m;
 const ORDER_NUMERIC_REGEX = /^order:\s*(-?\d+(?:\.\d+)?)$/m;
@@ -67,7 +68,7 @@ export async function normalizeOrderValues(app: App, folder: TFolder): Promise<C
 			return diff;
 		}
 
-		return a.fileName.localeCompare(b.fileName);
+		return naturalCompare(a.fileName, b.fileName);
 	});
 
 	for (const [index, entry] of entries.entries()) {
