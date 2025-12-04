@@ -1,94 +1,28 @@
-# Obsidian Sample Plugin
+# Obsidian Inserter
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+기존 `references/` 폴더에 있던 Python 스크립트 네 가지를 그대로 옮겨, 옵시디언 명령 팔레트에서 실행할 수 있도록 만든 플러그인입니다. 활성화된 노트가 속한 폴더를 기준으로 모든 Markdown 파일을 처리합니다.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+## 제공 명령
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+모든 명령은 `Ctrl + P`로 명령 팔레트를 연 뒤 이름을 입력하면 실행할 수 있습니다.
 
-## First time developing plugins?
+-   `현재 폴더에 Series Navigator 블록 추가`  
+    폴더에 있는 모든 Markdown 문서의 끝에 Datacore `SeriesNavigator` JSX 블록을 추가합니다. 이미 동일한 블록이 있는 문서는 건너뜁니다.
+-   `현재 폴더에 Source View 블록 삽입`  
+    각 문서의 frontmatter 뒤(가능하면 첫 번째 H1 바로 뒤)에 `SourceView` JSX 블록을 삽입합니다. 이미 블록이 있는 문서는 건너뜁니다.
+-   `현재 폴더 정렬: sourceDate 기준`  
+    frontmatter 안의 `sourceDate` 값을 기준으로 모든 문서의 `order` 값을 재정렬합니다. `sourceDate`가 없는 문서는 건너뜁니다.
+-   `현재 폴더 정렬: 제목 기준`  
+    frontmatter 의 `title` 값을 기준으로 `order` 값을 재정렬합니다. `title`이 없으면 파일명을 대신 사용합니다.
+-   `현재 폴더 order 값 정수 재정렬`  
+    소수점/중복이 섞여 있는 기존 `order` 값을 모두 1부터 시작하는 정수로 재정렬합니다. `order` 값이 같으면 파일명을 기준으로 오름차순 정렬합니다.
 
-Quick starting guide for new plugin devs:
+각 명령은 완료 후 결과를 알림으로 보여주며, 처리 중 문제가 있는 문서는 콘솔 경고로 확인할 수 있습니다.
+`order` 값을 수정하는 명령은 실행 전에 폴더 내에 기존 `order` 값이 있음을 알려 주고, 계속 진행할지 사용자에게 확인을 요청합니다.
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+## 설치 및 개발
 
-## Releasing new releases
-
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
-
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
-
-## Adding your plugin to the community plugin list
-
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
-
-## How to use
-
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
-
-## Manually installing the plugin
-
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
-
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint ./src/`
-
-## Funding URL
-
-You can include funding URLs where people who use your plugin can financially support it.
-
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
-
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
-```
-
-If you have multiple URLs, you can also do:
-
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
-```
-
-## API Documentation
-
-See https://github.com/obsidianmd/obsidian-api
+1. 저장소를 클론합니다.
+2. `npm install`로 의존성을 설치합니다.
+3. 개발용 번들을 위해 `npm run dev`, 배포용 번들을 위해 `npm run build`를 실행합니다.
+4. `main.js`, `manifest.json`, `styles.css`(선택)를 원하는 볼트의 `.obsidian/plugins/obsidian-inserter/` 로 복사하면 수동 설치가 완료됩니다.

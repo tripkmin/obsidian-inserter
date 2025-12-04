@@ -1,134 +1,110 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { Notice, Plugin, TFolder } from "obsidian";
+import { appendSeriesNavigator } from "./src/commands/appendSeriesNavigator";
+import { insertSourceView } from "./src/commands/insertSourceView";
+import { normalizeOrderValues } from "./src/commands/normalizeOrderValues";
+import { orderBySourceDate } from "./src/commands/orderBySourceDate";
+import { orderByTitle } from "./src/commands/orderByTitle";
+import type { CommandOutcome } from "./src/types";
+import { folderHasExistingOrders } from "./src/utils/order";
+import { confirmAction } from "./src/ui/confirmModal";
 
-// Remember to rename these classes and interfaces!
-
-interface MyPluginSettings {
-	mySetting: string;
-}
-
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
-}
-
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
-
+export default class ObsidianInserterPlugin extends Plugin {
 	async onload() {
-		await this.loadSettings();
-
-		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (_evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
-		// Perform additional things with the ribbon
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
-
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
-
-		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			}
+			id: "append-series-navigator-block",
+			name: "현재 폴더에 Series Navigator 블록 추가",
+			callback: () =>
+				this.runWithActiveFolder((folder) =>
+					appendSeriesNavigator(this.app, folder)
+				),
 		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, _view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
 
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
+		this.addCommand({
+			id: "insert-source-view-block",
+			name: "현재 폴더에 Source View 블록 삽입",
+			callback: () =>
+				this.runWithActiveFolder((folder) =>
+					insertSourceView(this.app, folder)
+				),
+		});
+
+		this.addCommand({
+			id: "order-files-by-source-date",
+			name: "현재 폴더 정렬: sourceDate 기준",
+			callback: () =>
+				this.runWithActiveFolder(
+					(folder) => orderBySourceDate(this.app, folder),
+					{ warnIfOrderExists: true }
+				),
+		});
+
+		this.addCommand({
+			id: "order-files-by-title",
+			name: "현재 폴더 정렬: 제목 기준",
+			callback: () =>
+				this.runWithActiveFolder(
+					(folder) => orderByTitle(this.app, folder),
+					{ warnIfOrderExists: true }
+				),
+		});
+
+		this.addCommand({
+			id: "normalize-order-values",
+			name: "현재 폴더 order 값 정수 재정렬",
+			callback: () =>
+				this.runWithActiveFolder(
+					(folder) => normalizeOrderValues(this.app, folder),
+					{ warnIfOrderExists: true }
+				),
+		});
+	}
+
+	private async runWithActiveFolder(
+		handler: (folder: TFolder) => Promise<CommandOutcome>,
+		options?: { warnIfOrderExists?: boolean }
+	): Promise<void> {
+		const folder = this.getActiveFolder();
+
+		if (!folder) {
+			new Notice(
+				"명령을 실행하기 전에 처리할 노트를 하나 연 뒤 다시 시도하세요."
+			);
+			return;
+		}
+
+		if (options?.warnIfOrderExists) {
+			const hasOrder = await folderHasExistingOrders(this.app, folder);
+			if (hasOrder) {
+				const confirmed = await confirmAction(
+					this.app,
+					"이 폴더에는 기존 order 값이 있습니다. 계속 진행하시겠습니까?"
+				);
+
+				if (!confirmed) {
+					new Notice("사용자가 명령을 취소했습니다.");
+					return;
 				}
 			}
-		});
+		}
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		try {
+			const outcome = await handler(folder);
+			const folderLabel = folder.path || "/";
+			new Notice(`${outcome.summary} (폴더: ${folderLabel})`);
 
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+			if (outcome.warnings?.length) {
+				console.warn("Obsidian Inserter 경고:", outcome.warnings);
+			}
+		} catch (error) {
+			console.error(error);
+			new Notice(
+				"명령 실행에 실패했습니다. 자세한 내용은 콘솔을 확인하세요."
+			);
+		}
 	}
 
-	onunload() {
-
-	}
-
-	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-	}
-
-	async saveSettings() {
-		await this.saveData(this.settings);
-	}
-}
-
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
-	}
-}
-
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
-
-	constructor(app: App, plugin: MyPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		const {containerEl} = this;
-
-		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
-			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
-				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
-					await this.plugin.saveSettings();
-				}));
+	private getActiveFolder(): TFolder | null {
+		const activeFile = this.app.workspace.getActiveFile();
+		return activeFile?.parent ?? null;
 	}
 }
