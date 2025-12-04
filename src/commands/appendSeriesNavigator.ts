@@ -1,23 +1,7 @@
 import type { App, TFolder } from "obsidian";
 import { getMarkdownFiles } from "../utils/files";
 import type { CommandOutcome } from "../types";
-
-const SERIES_NAVIGATOR_BLOCK = [
-	"",
-	"```datacorejsx",
-	"const { PATH } = customJS;",
-	'const { SeriesNavigator } = await dc.require(',
-	'  dc.headerLink(`${PATH.DATACORE_TEMPLATE}/SeriesNavigator.md`, "SeriesNavigator")',
-	");",
-	"",
-	"return function View() {",
-	"  return <SeriesNavigator />;",
-	"};",
-	"```",
-	"",
-].join("\n");
-
-const SERIES_NAVIGATOR_SNIPPET = SERIES_NAVIGATOR_BLOCK.trim();
+import { SERIES_NAVIGATOR_BLOCK, SERIES_NAVIGATOR_SNIPPET } from "../utils/datacoreBlocks";
 
 export async function appendSeriesNavigator(app: App, folder: TFolder): Promise<CommandOutcome> {
 	const files = getMarkdownFiles(folder);

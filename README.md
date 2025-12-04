@@ -8,8 +8,14 @@
 
 -   `현재 폴더에 Series Navigator 블록 추가`  
     폴더에 있는 모든 Markdown 문서의 끝에 Datacore `SeriesNavigator` JSX 블록을 추가합니다. 이미 동일한 블록이 있는 문서는 건너뜁니다.
--   `현재 폴더에 Source View 블록 삽입`  
-    각 문서의 frontmatter 뒤(가능하면 첫 번째 H1 바로 뒤)에 `SourceView` JSX 블록을 삽입합니다. 이미 블록이 있는 문서는 건너뜁니다.
+-   `현재 폴더에서 Series Navigator 블록 제거`  
+    폴더 내 문서에서 `SeriesNavigator` 블록을 찾아 모두 삭제합니다.
+-   `현재 폴더에 Note Header 블록 삽입`  
+    각 문서의 frontmatter 뒤(가능하면 첫 번째 H1 바로 뒤)에 `NoteHeader` JSX 블록을 삽입합니다. 이미 블록이 있는 문서는 건너뜁니다.
+-   `현재 폴더에서 Note Header 블록 제거`  
+    폴더 내 문서에서 `NoteHeader` 블록을 찾아 모두 삭제합니다.
+-   `현재 폴더에서 Source View 블록 제거`  
+    이전 버전에서 사용하던 `SourceView` 블록을 폴더 내 모든 문서에서 찾아 삭제합니다.
 -   `현재 폴더 정렬: sourceDate 기준`  
     frontmatter 안의 `sourceDate` 값을 기준으로 모든 문서의 `order` 값을 재정렬합니다. `sourceDate`가 없는 문서는 건너뜁니다.
 -   `현재 폴더 정렬: 제목 기준`  

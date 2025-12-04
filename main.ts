@@ -1,6 +1,9 @@
 import { Notice, Plugin, TFolder } from "obsidian";
 import { appendSeriesNavigator } from "./src/commands/appendSeriesNavigator";
-import { insertSourceView } from "./src/commands/insertSourceView";
+import { insertNoteHeader } from "./src/commands/insertNoteHeader";
+import { removeSeriesNavigatorBlocks } from "./src/commands/removeSeriesNavigator";
+import { removeNoteHeaderBlocks } from "./src/commands/removeNoteHeader";
+import { removeSourceViewBlocks } from "./src/commands/removeSourceView";
 import { normalizeOrderValues } from "./src/commands/normalizeOrderValues";
 import { orderBySourceDate } from "./src/commands/orderBySourceDate";
 import { orderByTitle } from "./src/commands/orderByTitle";
@@ -23,11 +26,38 @@ export default class ObsidianInserterPlugin extends Plugin {
 		});
 
 		this.addCommand({
-			id: "insert-source-view-block",
-			name: "현재 폴더에 Source View 블록 삽입",
+			id: "insert-note-header-block",
+			name: "현재 폴더에 Note Header 블록 삽입",
 			callback: () =>
 				this.runWithActiveFolder((folder) =>
-					insertSourceView(this.app, folder)
+					insertNoteHeader(this.app, folder)
+				),
+		});
+
+		this.addCommand({
+			id: "remove-series-navigator-block",
+			name: "현재 폴더에서 Series Navigator 블록 제거",
+			callback: () =>
+				this.runWithActiveFolder((folder) =>
+					removeSeriesNavigatorBlocks(this.app, folder)
+				),
+		});
+
+		this.addCommand({
+			id: "remove-note-header-block",
+			name: "현재 폴더에서 Note Header 블록 제거",
+			callback: () =>
+				this.runWithActiveFolder((folder) =>
+					removeNoteHeaderBlocks(this.app, folder)
+				),
+		});
+
+		this.addCommand({
+			id: "remove-source-view-block",
+			name: "현재 폴더에서 Source View 블록 제거",
+			callback: () =>
+				this.runWithActiveFolder((folder) =>
+					removeSourceViewBlocks(this.app, folder)
 				),
 		});
 

@@ -2,23 +2,11 @@ import type { App, TFolder } from "obsidian";
 import type { CommandOutcome } from "../types";
 import { getMarkdownFiles } from "../utils/files";
 import { getFrontmatter } from "../utils/frontmatter";
+import { NOTE_HEADER_SNIPPET } from "../utils/datacoreBlocks";
 
-const SOURCE_VIEW_BLOCK = [
-	"```datacorejsx",
-	"const { PATH } = customJS;",
-	'const { SourceView } = await dc.require(dc.headerLink(`${PATH.DATACORE_TEMPLATE}/SourceView.md`, "SourceView"));',
-	"",
-	"return function View(){",
-	"\treturn (<SourceView />)",
-	"}",
-	"```",
-	"",
-].join("\n");
-
-const SOURCE_VIEW_SNIPPET = SOURCE_VIEW_BLOCK.trim();
 const HEADING1_REGEX = /^# (?!#).*$/m;
 
-export async function insertSourceView(
+export async function insertNoteHeader(
 	app: App,
 	folder: TFolder
 ): Promise<CommandOutcome> {
@@ -31,7 +19,7 @@ export async function insertSourceView(
 		try {
 			const content = await app.vault.read(file);
 
-			if (content.includes(SOURCE_VIEW_SNIPPET)) {
+			if (content.includes(NOTE_HEADER_SNIPPET)) {
 				skipped += 1;
 				continue;
 			}
@@ -56,12 +44,12 @@ export async function insertSourceView(
 				updatedContent = `${content.slice(
 					0,
 					headingEnd
-				)}\n\n${SOURCE_VIEW_SNIPPET}\n\n${content.slice(headingEnd)}`;
+				)}\n\n${NOTE_HEADER_SNIPPET}\n\n${content.slice(headingEnd)}`;
 			} else {
 				updatedContent = `${content.slice(
 					0,
 					frontmatter.end
-				)}\n${SOURCE_VIEW_SNIPPET}\n\n${restContent}`;
+				)}\n${NOTE_HEADER_SNIPPET}\n\n${restContent}`;
 			}
 
 			await app.vault.modify(file, updatedContent);
@@ -73,7 +61,7 @@ export async function insertSourceView(
 	}
 
 	return {
-		summary: `Source View 블록을 ${processed}개 문서에 삽입했고, ${skipped}개 문서는 이미 포함하고 있었습니다.`,
+		summary: `Note Header 블록을 ${processed}개 문서에 삽입했고, ${skipped}개 문서는 이미 포함하고 있었습니다.`,
 		warnings: warnings.length ? warnings : undefined,
 	};
 }
